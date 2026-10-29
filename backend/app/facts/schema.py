@@ -74,6 +74,19 @@ def fmt_pct(p: Decimal) -> str:
     return f"{p:f}".rstrip("0").rstrip(".") if "." in f"{p:f}" else f"{p:f}"
 
 
+def check_owner_answer(answer: str) -> str:
+    """Owner answers are spoken by the agent, so they must be a real sentence.
+
+    A bare value like "9" is ambiguous ($9? 9 days?) and in testing made the agent
+    reason out loud to the caller about it. Enforced on new input only, so older
+    saved versions still load.
+    """
+    answer = answer.strip()
+    if len(answer.split()) < 3:
+        raise ValueError('Write the answer as a full sentence, e.g. "Yes, leather jackets start at $60."')
+    return answer
+
+
 class FAQ(BaseModel):
     question: str
     answer: str

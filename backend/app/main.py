@@ -2,11 +2,14 @@ import hashlib
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.agent.bot import run_call
+from app.api import auth, callbacks, calls, facts, stats, unanswered
 from app.config import settings
 from app.db.models import Call
 from app.db.session import SessionLocal
@@ -21,6 +24,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="J's Cleaners AI Receptionist", lifespan=lifespan)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.session_secret,
+    session_cookie="js_owner",
+    max_age=7 * 24 * 3600,
+    same_site="lax",
+    https_only=settings.cookie_secure,
+)
+for module in (auth, calls, callbacks, unanswered, facts, stats):
+    app.include_router(module.router)
 
 
 @app.get("/api/health")
@@ -58,4 +71,14 @@ async def call(websocket: WebSocket) -> None:
 # In production the built React app is copied here and served from the same origin.
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 if STATIC_DIR.exists():
-    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    async def spa(path: str) -> FileResponse:
+        # Client-side routes (e.g. /owner/calls) all load index.html.
+        if path.startswith(("api/", "ws/")):
+            raise HTTPException(404)
+        file = STATIC_DIR / path
+        if path and file.is_file() and STATIC_DIR in file.resolve().parents:
+            return FileResponse(file)
+        return FileResponse(STATIC_DIR / "index.html")
