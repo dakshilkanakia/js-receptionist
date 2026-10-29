@@ -91,7 +91,8 @@ export default function FactsPage() {
 
       {saved && !dirty && (
         <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          Saved as version v{saved}. The next call will use it.
+          Saved as version v{saved}. The next call will use it.{' '}
+          <a href="/" target="_blank" rel="noopener" className="font-medium underline">Test it: call Jenny ↗</a>
         </div>
       )}
 

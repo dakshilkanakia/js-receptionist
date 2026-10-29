@@ -12,6 +12,24 @@ const NAV = [
   { to: '/owner/facts', label: 'Facts & prices' },
 ]
 
+function CallJennyLink() {
+  // New tab, so the dashboard stays open and the call shows up here live.
+  return (
+    <a
+      href="/"
+      target="_blank"
+      rel="noopener"
+      className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M3 5.5A2.5 2.5 0 0 1 5.5 3h1.6a1 1 0 0 1 .95.68l1.1 3.3a1 1 0 0 1-.4 1.15l-1.5 1a11 11 0 0 0 6.6 6.6l1-1.5a1 1 0 0 1 1.16-.4l3.3 1.1a1 1 0 0 1 .69.95v1.6A2.5 2.5 0 0 1 18.5 21C10 21 3 14 3 5.5Z" />
+      </svg>
+      Call Jenny
+    </a>
+  )
+}
+
 export default function OwnerLayout() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -63,6 +81,7 @@ export default function OwnerLayout() {
           <div className="text-xs text-slate-500">Owner dashboard</div>
         </Link>
         {nav}
+        <div className="mt-4"><CallJennyLink /></div>
         <div className="mt-auto border-t border-slate-100 px-3 pt-4 text-xs text-slate-500">
           <div className="truncate">{me.data?.email}</div>
           <button onClick={logout} className="mt-1 font-medium text-slate-700 hover:text-slate-900">Sign out</button>
@@ -78,6 +97,7 @@ export default function OwnerLayout() {
       {menuOpen && (
         <div className="border-b border-slate-200 bg-white p-4 lg:hidden">
           {nav}
+          <div className="mt-3"><CallJennyLink /></div>
           <button onClick={logout} className="mt-3 px-3 text-sm font-medium text-slate-700">Sign out</button>
         </div>
       )}
