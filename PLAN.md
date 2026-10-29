@@ -352,7 +352,7 @@ Talking point: voice I/O dominates the cost, not the LLM. A managed platform (Va
 
 ## 18. Open questions (brainstorm with Dakshil)
 
-- Q1: Agent persona name (e.g. "Jay")? Voice choice after the A/B.
+- Q1: Voice choice after the A/B. (Name decided: Jenny.)
 - Q2: Which extras (§11)?
 - Q6: Video script (later).
 
@@ -361,3 +361,10 @@ Resolved (2026-10-28):
 - Q4 → A10 (no rush on alterations)
 - Q5 → A1 accepted (consent flow + explicit permission for callback after decline)
 - A5 confirmed: no ready dates, only turnaround rules
+
+---
+
+## 19. Backlog (found in testing, deferred)
+
+- Goodbye can be clipped if the caller speaks or there's noise during it: ignore the caller's mic once `end_call` is decided (custom user-mute strategy).
+- Voice-test the consent-decline flow end to end (passes in text evals).

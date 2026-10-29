@@ -1,0 +1,30 @@
+diff --git a/node_modules/@pipecat-ai/websocket-transport/dist/index.js b/node_modules/@pipecat-ai/websocket-transport/dist/index.js
+index fc9f5c7..c146a69 100644
+--- a/node_modules/@pipecat-ai/websocket-transport/dist/index.js
++++ b/node_modules/@pipecat-ai/websocket-transport/dist/index.js
+@@ -603,7 +603,9 @@ class $347522367945ce82$export$9698d62c78b8f366 {
+             await new Promise((r)=>setTimeout(()=>r(), 1));
+         }
+         const { trackId: trackId } = trackSampleOffset;
+-        if (interrupt && trackId) this.interruptedTrackIds[trackId] = true;
++        // Patched: the transport sends every bot chunk with the same "default" track id, so
++        // marking it interrupted muted all bot audio for the rest of the call. The worklet
++        // already stops the interrupted stream, and the next chunk starts a fresh one.
+         return trackSampleOffset;
+     }
+     /**
+diff --git a/node_modules/@pipecat-ai/websocket-transport/dist/index.module.js b/node_modules/@pipecat-ai/websocket-transport/dist/index.module.js
+index 0da5f94..e8885e9 100644
+--- a/node_modules/@pipecat-ai/websocket-transport/dist/index.module.js
++++ b/node_modules/@pipecat-ai/websocket-transport/dist/index.module.js
+@@ -579,7 +579,9 @@ class $17ba052b4c7c2439$export$9698d62c78b8f366 {
+             await new Promise((r)=>setTimeout(()=>r(), 1));
+         }
+         const { trackId: trackId } = trackSampleOffset;
+-        if (interrupt && trackId) this.interruptedTrackIds[trackId] = true;
++        // Patched: the transport sends every bot chunk with the same "default" track id, so
++        // marking it interrupted muted all bot audio for the rest of the call. The worklet
++        // already stops the interrupted stream, and the next chunk starts a fresh one.
+         return trackSampleOffset;
+     }
+     /**
