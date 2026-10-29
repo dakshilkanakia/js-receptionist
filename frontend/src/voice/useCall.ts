@@ -53,6 +53,19 @@ export function useCall() {
     setLines([])
     setStatus('connecting')
 
+    // Ask first, so a busy or rate-limited caller gets a clear message instead of a failed call.
+    try {
+      const res = await fetch('/api/call/availability')
+      const avail: { ok: boolean; reason: string | null } = await res.json()
+      if (!avail.ok) {
+        setError(avail.reason ?? 'Jenny is unavailable right now.')
+        setStatus('error')
+        return
+      }
+    } catch {
+      // If the check itself fails, try the call anyway; the server enforces the same limits.
+    }
+
     const client = new PipecatClient({
       transport: new WebSocketTransport(),
       enableMic: true,

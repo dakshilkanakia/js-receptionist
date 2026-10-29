@@ -91,6 +91,8 @@ CASES = [
          faqs=[{"question": "What is the price for a leather jacket?", "answer": "leather jacket start at $9"}],
          must_not_call=["log_unanswered_question"], reply_must_match=[r"\$?9\b"],
          reply_must_not_match=[r"owner", r"common questions", r"confirm the final"]),
+    Case("unlisted item not derived", ["How much to clean a two-piece suit?"],
+         must_call=["log_unanswered_question"], reply_must_not_match=[r"17\.45", r"13\.45", r"30\.90", r"FACTS"]),
     Case("callback flow", [
         "I need someone to call me back about a shirt missing from my order.",
         "My name is Alex.",

@@ -4,7 +4,7 @@ import aiohttp
 from fastapi import WebSocket
 from loguru import logger
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.frames.frames import TTSSpeakFrame
+from pipecat.frames.frames import EndWorkerFrame, TTSSpeakFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -37,11 +37,16 @@ from app.config import settings
 from app.facts.hours import now_in
 from app.facts.schema import Facts
 
-# Reasoning off: replies are short and tools do the hard parts. With reasoning on,
-# OpenRouter let Haiku spend most of the output budget thinking, which truncated a
-# tool call mid-argument and left the caller in silence (and doubled latency).
-LLM_EXTRA_BODY = {"reasoning": {"enabled": False}}
+# Low-effort reasoning: with reasoning off, Haiku sometimes "thought out loud" in
+# spoken text ("The FACTS don't list...", "Logged. Continuing..."). Low effort keeps
+# that private: 18/18 evals in 3 runs, same median latency, ~1s slower on the
+# hardest ~10% of turns, ~$0.0005 extra per call. Reasoning counts against the
+# output cap, so the cap stays well above its observed peak (~230 tokens).
+LLM_EXTRA_BODY = {"reasoning": {"effort": "low"}}
 LLM_MAX_TOKENS = 1024
+IDLE_SECONDS = 20
+IDLE_CHECK_IN = "Are you still there?"
+IDLE_GOODBYE = "I haven't heard anything, so I'll hang up now. Feel free to call back anytime. Goodbye!"
 
 
 async def run_call(websocket: WebSocket, call_id: int, facts: Facts) -> None:
@@ -94,6 +99,8 @@ async def run_call(websocket: WebSocket, call_id: int, facts: Facts) -> None:
             # The greeting carries the AI + transcription notice and the opt-out, so the
             # caller can't interrupt it. Every later turn stays interruptible.
             user_mute_strategies=[MuteUntilFirstBotCompleteUserMuteStrategy()],
+            # Caller silent this long after Jenny finishes: check in once, then hang up.
+            user_idle_timeout=IDLE_SECONDS,
             # While Jenny is talking, it takes 3+ words to interrupt her, so "mhm",
             # "okay" or "yeah" let her finish. When she's silent, one word starts a turn.
             user_turn_strategies=UserTurnStrategies(
@@ -127,8 +134,22 @@ async def run_call(websocket: WebSocket, call_id: int, facts: Facts) -> None:
         # Fixed greeting (not LLM-generated) so the AI + transcription notice is always said.
         await worker.queue_frames([TTSSpeakFrame(GREETING)])
 
+    idle_prompts = 0
+
+    @user_aggregator.event_handler("on_user_turn_idle")
+    async def on_user_turn_idle(aggregator):
+        nonlocal idle_prompts
+        idle_prompts += 1
+        if idle_prompts == 1:
+            await worker.queue_frames([TTSSpeakFrame(IDLE_CHECK_IN)])
+        else:
+            logger.info(f"call {call_id}: caller silent, hanging up")
+            await worker.queue_frames([TTSSpeakFrame(IDLE_GOODBYE), EndWorkerFrame()])
+
     @user_aggregator.event_handler("on_user_turn_stopped")
     async def on_user_turn_stopped(aggregator, strategy, message):
+        nonlocal idle_prompts
+        idle_prompts = 0
         logger.info(f"call {call_id} USER: {message.content}")
         await rec.add_turn("user", message.content)
 

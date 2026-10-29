@@ -8,7 +8,7 @@ const STATUS: Record<CallStatus, string> = {
   listening: 'Jenny is listening',
   speaking: 'Jenny is speaking',
   ended: 'Call ended. Thanks for calling!',
-  error: 'Something went wrong',
+  error: 'Couldn\'t start the call',
 }
 
 function PhoneIcon({ className }: { className?: string }) {
