@@ -1,0 +1,8 @@
+.home { max-width: 640px; margin: 0 auto; padding: 48px 16px; text-align: center; font-family: system-ui, sans-serif; }
+.tagline { color: #555; }
+.call { margin-top: 24px; padding: 16px 32px; font-size: 1.1rem; border: 0; border-radius: 999px; background: #1f6feb; color: #fff; cursor: pointer; }
+.call.end { background: #d1242f; }
+.status { color: #555; margin-top: 12px; }
+.error { color: #d1242f; }
+.transcript { text-align: left; margin-top: 32px; }
+.transcript .agent { color: #1a7f37; }
