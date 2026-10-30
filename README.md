@@ -26,7 +26,7 @@ Hosted on Render's free tier (auto-deploys on every push to `main`).
 | Layer | Choice |
 |---|---|
 | Voice pipeline | [Pipecat](https://github.com/pipecat-ai/pipecat) over WebSocket |
-| Speech-to-text / text-to-speech | Deepgram Nova-3 / Aura-2 |
+| Speech-to-text / text-to-speech | Deepgram Flux (turn detection server-side) / Aura-2 |
 | LLM | Claude Haiku 5.5 via OpenRouter, with tool calls |
 | Backend | Python, FastAPI, SQLAlchemy, Alembic |
 | Database | Postgres |

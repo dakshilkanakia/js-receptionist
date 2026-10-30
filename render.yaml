@@ -4,8 +4,9 @@ services:
   - type: web
     name: js-receptionist
     runtime: docker
-    # Free tier (~0.1 CPU) makes call audio choppy: a call needs ~0.2 CPU.
-    # Switch to "starter" (0.5 CPU, billed per second) for the review window.
+    # Free tier is enough with STT_ENGINE=flux (turn detection runs at Deepgram).
+    # With the local Smart Turn model, free-tier audio was choppy; "starter"
+    # (0.5 CPU, billed per second) is the fallback if that ever returns.
     plan: free
     region: virginia
     dockerfilePath: ./Dockerfile
