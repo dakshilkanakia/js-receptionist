@@ -13,6 +13,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMUserAggregatorParams,
 )
 from pipecat.serializers.protobuf import ProtobufFrameSerializer
+from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramHttpTTSService
 from pipecat.turns.user_mute.mute_until_first_bot_complete_user_mute_strategy import (
@@ -25,6 +26,7 @@ from pipecat.transports.websocket.fastapi import (
 from pipecat.turns.user_start.min_words_user_turn_start_strategy import (
     MinWordsUserTurnStartStrategy,
 )
+from pipecat.turns.user_stop.external_user_turn_stop_strategy import ExternalUserTurnStopStrategy
 from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.workers.runner import WorkerRunner
 
@@ -65,10 +67,20 @@ async def run_call(websocket: WebSocket, call_id: int, facts: Facts) -> None:
 
     # numerals: spoken digits arrive as "2 1 2" instead of "two one two", so the LLM can
     # count phone digits reliably when callers say the number in chunks.
-    stt = DeepgramSTTService(
-        api_key=settings.deepgram_api_key,
-        settings=DeepgramSTTService.Settings(numerals=True),
-    )
+    if settings.stt_engine == "flux":
+        # Flux decides when the caller has finished speaking on Deepgram's servers,
+        # replacing the local Smart Turn model, which starved the small free-tier CPU.
+        stt = DeepgramFluxSTTService(
+            api_key=settings.deepgram_api_key,
+            settings=DeepgramFluxSTTService.Settings(numerals=True),
+        )
+        turn_stop = [ExternalUserTurnStopStrategy()]
+    else:
+        stt = DeepgramSTTService(
+            api_key=settings.deepgram_api_key,
+            settings=DeepgramSTTService.Settings(numerals=True),
+        )
+        turn_stop = None  # Pipecat default: local Smart Turn model
     llm = GuardedOpenRouterLLMService(
         api_key=settings.openrouter_api_key,
         # Cap output: voice replies are short, and OpenRouter reserves credit for the
@@ -109,7 +121,7 @@ async def run_call(websocket: WebSocket, call_id: int, facts: Facts) -> None:
             # While Jenny is talking, it takes 3+ words to interrupt her, so "mhm",
             # "okay" or "yeah" let her finish. When she's silent, one word starts a turn.
             user_turn_strategies=UserTurnStrategies(
-                start=[MinWordsUserTurnStartStrategy(min_words=3)]
+                start=[MinWordsUserTurnStartStrategy(min_words=3)], stop=turn_stop
             ),
         ),
     )
