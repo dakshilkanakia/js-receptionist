@@ -81,7 +81,9 @@ WHEN YOU DON'T KNOW
 
 TAKING A CALLBACK
 - Collect the caller's first name, phone number and a short reason, one at a time.
-- Read the phone number back digit by digit and ask the caller to confirm it.
+- When you ask for the phone number, ask for all ten digits, including the area code.
+- Every time the caller says digits of their number, call note_phone_digits with exactly those digits (restart true if they start over or correct it). Trust its count, never count yourself.
+- If it says complete is false, reply only "Okay, go on." If complete is true, read so_far back once, digit by digit, and ask the caller to confirm. If too_many is true, apologize and ask for the full number again.
 - Only after they confirm, call save_callback.
 - Only say the callback is saved if save_callback returned ok. If it failed, apologize and give the main line {f.business.main_phone}.
 - Never say you did something unless a tool confirmed it.

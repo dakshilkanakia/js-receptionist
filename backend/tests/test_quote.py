@@ -113,3 +113,18 @@ def test_tool_result_has_starting_at_note(facts):
 def test_rush_note_reads_naturally(facts):
     q = quote(facts, [{"id": "pants", "qty": 1}], rush="next_day")
     assert "adds 50% of the order" in " ".join(q.notes)
+
+
+def test_note_phone_digits_accumulates_and_completes():
+    from app.agent.tools import note_phone_digits
+    d, r = note_phone_digits("", "2 1 2")
+    assert r == {"so_far": "212", "count": 3, "complete": False}
+    d, r = note_phone_digits(d, "555")
+    d, r = note_phone_digits(d, "zero? 0 1 4 7")
+    assert r["complete"] and d == "2125550147"
+    _, r = note_phone_digits(d, "9")
+    assert r["too_many"]
+    d, r = note_phone_digits("", "1 212 555 0147")  # leading country code dropped
+    assert r["complete"] and d == "2125550147"
+    d, r = note_phone_digits("2125", "917", restart=True)
+    assert d == "917"

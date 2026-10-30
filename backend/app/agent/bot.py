@@ -63,7 +63,12 @@ async def run_call(websocket: WebSocket, call_id: int, facts: Facts) -> None:
         ),
     )
 
-    stt = DeepgramSTTService(api_key=settings.deepgram_api_key)
+    # numerals: spoken digits arrive as "2 1 2" instead of "two one two", so the LLM can
+    # count phone digits reliably when callers say the number in chunks.
+    stt = DeepgramSTTService(
+        api_key=settings.deepgram_api_key,
+        settings=DeepgramSTTService.Settings(numerals=True),
+    )
     llm = GuardedOpenRouterLLMService(
         api_key=settings.openrouter_api_key,
         # Cap output: voice replies are short, and OpenRouter reserves credit for the

@@ -27,6 +27,16 @@ def normalize_us_phone(raw: str) -> str | None:
     return phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.E164)
 
 
+def note_phone_digits(so_far: str, said: str, restart: bool = False) -> tuple[str, dict]:
+    """Accumulate phone digits said across turns. Counting is done here, not by the LLM."""
+    digits = ("" if restart else so_far) + "".join(ch for ch in said if ch.isdigit())
+    if len(digits) == 11 and digits.startswith("1"):
+        digits = digits[1:]  # leading US country code
+    if len(digits) > 10:
+        return "", {"too_many": True, "heard": digits}
+    return digits, {"so_far": digits, "count": len(digits), "complete": len(digits) == 10}
+
+
 def build_tools(facts: Facts) -> ToolsSchema:
     item_ids = [p.id for p in facts.prices]
     addon_ids = [a.id for a in facts.addons]
@@ -64,6 +74,18 @@ def build_tools(facts: Facts) -> ToolsSchema:
                     "rush": {"type": "string", "enum": ["none", "next_day", "same_day"]},
                 },
                 required=["items"],
+            ),
+            FunctionSchema(
+                name="note_phone_digits",
+                description=(
+                    "Call every time the caller says digits of their phone number, with exactly the digits "
+                    "they just said. Returns the number so far and whether it is complete (10 digits)."
+                ),
+                properties={
+                    "digits": {"type": "string", "description": "Only the digits the caller just said"},
+                    "restart": {"type": "boolean", "description": "True if the caller is starting the number over"},
+                },
+                required=["digits"],
             ),
             FunctionSchema(
                 name="save_callback",
@@ -112,6 +134,12 @@ def register_tools(llm: LLMService, facts: Facts, rec: CallRecorder, speech: Spe
         summary = f"Quote: total {payload['total']}" if result.ok else f"Quote error: {'; '.join(result.errors)}"
         await rec.add_turn("tool", f"{summary} | request {json.dumps(args)}")
         await params.result_callback(payload)
+
+    async def note_phone_digits_tool(params: FunctionCallParams):
+        rec.phone_digits, result = note_phone_digits(
+            rec.phone_digits, str(params.arguments.get("digits", "")), bool(params.arguments.get("restart"))
+        )
+        await params.result_callback(result)
 
     async def save_callback(params: FunctionCallParams):
         args = params.arguments
@@ -162,6 +190,7 @@ def register_tools(llm: LLMService, facts: Facts, rec: CallRecorder, speech: Spe
         await params.llm.push_frame(EndWorkerFrame())
 
     llm.register_function("get_quote", get_quote)
+    llm.register_function("note_phone_digits", note_phone_digits_tool)
     llm.register_function("save_callback", save_callback)
     llm.register_function("log_unanswered_question", log_unanswered_question)
     llm.register_function("set_transcript_consent", set_transcript_consent)

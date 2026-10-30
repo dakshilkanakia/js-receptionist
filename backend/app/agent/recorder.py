@@ -17,6 +17,7 @@ class CallRecorder:
         self.callback_saved = False
         self.unanswered_logged = False
         self.user_turns = 0
+        self.phone_digits = ""  # callback number collected across turns
         self._idx = 0
         self._started = time.monotonic()
         self._finalized = False

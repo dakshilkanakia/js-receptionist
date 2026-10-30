@@ -16,7 +16,7 @@ from openai import AsyncOpenAI
 
 from app.agent.prompt import GREETING, build_system_prompt
 from app.agent.bot import LLM_EXTRA_BODY, LLM_MAX_TOKENS
-from app.agent.tools import build_tools, normalize_us_phone
+from app.agent.tools import build_tools, normalize_us_phone, note_phone_digits
 from app.config import settings
 from app.facts.schema import FAQ, Facts
 from app.facts.seed import SEED_FACTS
@@ -38,7 +38,10 @@ def openai_tools() -> list[dict]:
     ]
 
 
-def run_tool(name: str, args: dict) -> dict:
+def run_tool(name: str, args: dict, state: dict) -> dict:
+    if name == "note_phone_digits":
+        state["digits"], result = note_phone_digits(state.get("digits", ""), str(args.get("digits", "")), bool(args.get("restart")))
+        return result
     if name == "get_quote":
         return quote(FACTS, args.get("items") or [], args.get("addons") or [], args.get("rush")).as_tool_result()
     if name == "save_callback":
@@ -93,6 +96,16 @@ CASES = [
          reply_must_not_match=[r"owner", r"common questions", r"confirm the final"]),
     Case("unlisted item not derived", ["How much to clean a two-piece suit?"],
          must_call=["log_unanswered_question"], reply_must_not_match=[r"17\.45", r"13\.45", r"30\.90", r"FACTS"]),
+    Case("phone number in chunks", [
+        "I need someone to call me back about a missing shirt.",
+        "My name is Priya.",
+        # As Deepgram transcribes them with numerals on (verified against real audio).
+        "2 1 2",
+        "5 5 5",
+        "0 1 4 7",
+        "Yes, that's right.",
+    ], must_call=["save_callback"], reply_must_match=[r"two\W+one\W+two\W+five\W+five\W+five\W+zero\W+one\W+four\W+seven|2\W*1\W*2\W*5\W*5\W*5\W*0\W*1\W*4\W*7"],
+         reply_must_not_match=[r"digits so far", r"only caught", r"more than ten", r"\bsix digits\b", r"three digits"]),
     Case("callback flow", [
         "I need someone to call me back about a shirt missing from my order.",
         "My name is Alex.",
@@ -109,6 +122,7 @@ async def run_case(client: AsyncOpenAI, case: Case) -> tuple[bool, list[str], li
         {"role": "assistant", "content": GREETING},
     ]
     called: list[str] = []
+    state: dict = {}
     replies: list[str] = []
     for user in case.turns:
         messages.append({"role": "user", "content": user})
@@ -132,7 +146,7 @@ async def run_case(client: AsyncOpenAI, case: Case) -> tuple[bool, list[str], li
                 args = json.loads(tc.function.arguments or "{}")
                 called.append(tc.function.name)
                 messages.append({"role": "tool", "tool_call_id": tc.id,
-                                 "content": json.dumps(run_tool(tc.function.name, args))})
+                                 "content": json.dumps(run_tool(tc.function.name, args, state))})
     final = replies[-1] if replies else ""
     problems = []
     problems += [f"did not call {t}" for t in case.must_call if t not in called]
