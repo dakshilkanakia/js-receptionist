@@ -1,4 +1,5 @@
 import hashlib
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -16,6 +17,10 @@ from app.config import settings
 from app.db.models import Call
 from app.db.session import SessionLocal
 from app.facts.repo import latest_facts, seed_if_empty
+
+
+logger.remove()
+logger.add(sys.stderr, level=settings.log_level)
 
 
 @asynccontextmanager

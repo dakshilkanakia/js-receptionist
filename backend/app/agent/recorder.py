@@ -46,6 +46,12 @@ class CallRecorder:
             await s.commit()
         logger.info(f"call {self.call_id}: consent declined, transcript purged")
 
+    def loggable(self, text: str | None) -> str:
+        """Turn text for server logs. Logs are storage too, so withhold it after a decline."""
+        if not self.consent:
+            return "[withheld: caller declined transcription]"
+        return text or ""
+
     def outcome(self, duration_s: int) -> str:
         if self.callback_saved:
             return "callback_requested"

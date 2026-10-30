@@ -24,6 +24,8 @@ services:
         sync: false
       - key: SESSION_SECRET
         generateValue: true
+      - key: LOG_LEVEL
+        value: INFO
       - key: STT_ENGINE
         value: flux
       - key: LLM_MODEL

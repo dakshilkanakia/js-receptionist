@@ -22,6 +22,9 @@ class Settings:
     deepgram_api_key: str = os.getenv("DEEPGRAM_API_KEY", "")
     openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "")
     llm_model: str = os.getenv("LLM_MODEL", "anthropic/claude-haiku-5.5")
+    # INFO in production: Pipecat's DEBUG lines include conversation text (LLM requests,
+    # TTS sentences), which would keep transcripts in logs after a caller declines.
+    log_level: str = os.getenv("LOG_LEVEL", "DEBUG").upper()
     stt_engine: str = os.getenv("STT_ENGINE", "nova")  # nova | flux
     tts_voice: str = os.getenv("TTS_VOICE", "aura-2-thalia-en")
     owner_email: str = os.getenv("OWNER_EMAIL", "owner@demo.local")

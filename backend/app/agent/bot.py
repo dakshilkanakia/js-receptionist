@@ -167,12 +167,12 @@ async def run_call(websocket: WebSocket, call_id: int, facts: Facts) -> None:
     async def on_user_turn_stopped(aggregator, strategy, message):
         nonlocal idle_prompts
         idle_prompts = 0
-        logger.info(f"call {call_id} USER: {message.content}")
+        logger.info(f"call {call_id} USER: {rec.loggable(message.content)}")
         await rec.add_turn("user", message.content)
 
     @assistant_aggregator.event_handler("on_assistant_turn_stopped")
     async def on_assistant_turn_stopped(aggregator, message):
-        logger.info(f"call {call_id} AGENT: {message.content}")
+        logger.info(f"call {call_id} AGENT: {rec.loggable(message.content)}")
         await rec.add_turn("assistant", message.content, interrupted=message.interrupted)
 
     @transport.event_handler("on_client_disconnected")
