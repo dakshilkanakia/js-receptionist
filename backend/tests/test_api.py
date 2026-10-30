@@ -143,3 +143,9 @@ async def test_bare_owner_answer_rejected():
         cur["data"]["faqs"] = [{"question": "Leather?", "answer": "$9", "unanswered_id": None}]
         r = await c.put("/api/facts", json={"data": cur["data"], "base_version_id": cur["version_id"]})
         assert r.status_code == 422
+
+
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+async def test_health_accepts_get_and_head(method):
+    async with client(login=False) as c:
+        assert (await c.request(method, "/api/health")).status_code == 200

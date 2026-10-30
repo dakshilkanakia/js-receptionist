@@ -43,7 +43,8 @@ for module in (auth, calls, callbacks, unanswered, facts, stats):
     app.include_router(module.router)
 
 
-@app.get("/api/health")
+# HEAD too: uptime monitors (e.g. UptimeRobot) check with HEAD by default.
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health() -> dict:
     return {"ok": True}
 
