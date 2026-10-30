@@ -4,9 +4,9 @@ services:
   - type: web
     name: js-receptionist
     runtime: docker
-    # Starter (0.5 CPU): a call needs ~0.2 CPU; the free tier's ~0.1 made audio choppy.
-    # Billed per second, so switch back to free after the review window.
-    plan: starter
+    # Free tier (~0.1 CPU) makes call audio choppy: a call needs ~0.2 CPU.
+    # Switch to "starter" (0.5 CPU, billed per second) for the review window.
+    plan: free
     region: virginia
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
